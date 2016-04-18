@@ -184,10 +184,10 @@ namespace ScrollableListView
         private bool EvaluateAdapterAtPosition(RectTransform anchor)
         {
             Rect anchorRect = new Rect(this.adapterSize);
-            anchorRect.position = anchor.position;
+            anchorRect.center = anchor.position;
 
             Rect contentBufferRect = new Rect(this.contentBuffer.rect);
-            contentBufferRect.position = this.contentBuffer.position;
+            contentBufferRect.center = this.contentBuffer.position;
 
             return anchorRect.Overlaps(contentBufferRect);
         }
@@ -208,7 +208,7 @@ namespace ScrollableListView
         /// </summary>
         private void RefreshAdapters()
         {
-            for (int i = 0; i < this.itemCount; ++i)
+            for (int i = 0, max = Mathf.Min(this.itemCount, this.anchors.Count); i < max; ++i)
             {
                 RectTransform anchor = this.anchors[i];
                 bool isAnchorActive = this.EvaluateAdapterAtPosition(anchor);
@@ -349,9 +349,17 @@ namespace ScrollableListView
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(this.contentBuffer.position, this.contentBuffer.rect.size);
 
-            Gizmos.color = Color.blue;
             for (int i = 0; i < this.anchors.Count; ++i)
             {
+                if(this.anchors[i].childCount > 0)
+                {
+                    Gizmos.color = Color.green;
+                }
+                else
+                {
+                    Gizmos.color = Color.blue;
+                }
+
                 RectTransform anchor = this.anchors[i];
                 Gizmos.DrawWireCube(anchor.position, anchor.rect.size);
             }
@@ -370,12 +378,18 @@ namespace ScrollableListView
             UnityEditor.EditorApplication.delayCall = () =>
             {
                 this.TearDown();
-                this.Setup();
                 UnityEditor.EditorApplication.delayCall = () =>
                 {
-                    this.RefreshAdapters();
+                    this.Setup();
+                    UnityEditor.EditorApplication.delayCall = () =>
+                    {
+                        this.RefreshAdapters();
+                    };
                 };
             };
+
+            UnityEditor.EditorUtility.SetDirty(this.gameObject);
+
             base.OnValidate();
         }
     }
